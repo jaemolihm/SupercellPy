@@ -1,11 +1,9 @@
 import numpy as np
-from supercellpy import PWInput, make_fd_supercell
+from supercellpy import PWInput, make_fd_supercell, bohr_to_ang
 """
 Test example for using make_fd_supercell
 One can also use sys.path.append("/group2/jmlim/program/SupercellPy")
 """
-
-BOHR_TO_ANG = 0.529177
 
 # read pw.x input to PWInput object
 pw = PWInput.from_file('test.in')
@@ -20,7 +18,7 @@ u[:, 1] = [0.488266 + 0.108347j, 0.487974 + 0.108347j, -0.000292 + 0.000000j]
 # normalize phonon displacement
 amplitude = 1E-3 # angstrom
 alat = pw.get_alat()  # bohr
-u *= amplitude / (alat * BOHR_TO_ANG) / np.linalg.norm(u)
+u *= amplitude / (alat * bohr_to_ang) / np.linalg.norm(u)
 
 # make supercell
 pw_super = make_fd_supercell(pw, q, u)
