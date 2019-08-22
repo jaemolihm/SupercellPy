@@ -1,8 +1,8 @@
 import numpy as np
-from pwinput import PWInput
-from make_supercell import make_fd_supercell
+from supercellpy import PWInput, make_fd_supercell
 """
 Test example for using make_fd_supercell
+One can also use sys.path.append("/group2/jmlim/program/SupercellPy")
 """
 
 BOHR_TO_ANG = 0.529177
