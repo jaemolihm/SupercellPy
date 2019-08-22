@@ -170,9 +170,18 @@ def atom_supercell(pw: PWInput, s_mat):
 
     return atoms_name_new, atoms_cart_new
 
+def lat_to_reclat(cell):
+    rec = np.zeros((3, 3))
+    vol = np.dot(cell[:, 0], np.cross(cell[:, 1], cell[:, 2]))
+    fac = 2 * np.pi / vol
+    rec[:, 0] = np.cross(cell[:, 1], cell[:, 2]) * fac
+    rec[:, 1] = np.cross(cell[:, 2], cell[:, 0]) * fac
+    rec[:, 2] = np.cross(cell[:, 0], cell[:, 1]) * fac
+    return rec
+
 def make_fd_supercell(pw: PWInput, q_cry, ucart):
     import copy
-    from math import floor
+    from math import floor, ceil
     from itertools import product
     """
     Generate nondiagonal supercell with finite displacements
@@ -250,6 +259,17 @@ def make_fd_supercell(pw: PWInput, q_cry, ucart):
             )
             input_cell.append(line)
         pw_super.input_cards['CELL_PARAMETERS'] = input_cell
+
+    if 'K_POINTS' in pw_super.input_cards.keys():
+        nks = np.array([int(x) for x in pw.input_cards['K_POINTS'][1].split()[:3]])
+        dks = np.linalg.norm(lat_to_reclat(pw.cell), axis=0) / nks
+
+        nks_new = np.linalg.norm(lat_to_reclat(pw_super.cell), axis=0) / min(dks)
+        nks_new = [ceil(x) for x in nks_new]
+
+        input_kpt = ['K_POINTS automatic\n']
+        input_kpt.append(f" {nks_new[0]:3d}{nks_new[1]:3d}{nks_new[2]:3d}  0 0 0")
+        pw_super.input_cards['K_POINTS'] = input_kpt
 
     # update namelists
     try:
