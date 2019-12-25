@@ -179,7 +179,7 @@ def lat_to_reclat(cell):
     rec[:, 2] = np.cross(cell[:, 0], cell[:, 1]) * fac
     return rec
 
-def make_fd_supercell(pw: PWInput, q_cry, ucart):
+def make_fd_supercell(pw: PWInput, q_cry, ucart, skip_minkowski=False):
     import copy
     from math import floor, ceil
     from itertools import product
@@ -213,7 +213,10 @@ def make_fd_supercell(pw: PWInput, q_cry, ucart):
 
     # Minkowski reduction of lattice vector: linear combination to make them
     # as short as possible
-    cell_red = minkowski_reduce(cell_new)
+    if skip_minkowski:
+        cell_red = np.copy(cell_new)
+    else:
+        cell_red = minkowski_reduce(cell_new)
     cell_cell = np.einsum('xi,xj->ij', pw.cell, pw.cell)
     redcell_cell = np.einsum('xi,xj->ij', cell_red, pw.cell)
     s_red = redcell_cell @ np.linalg.inv(cell_cell)
@@ -265,7 +268,11 @@ def make_fd_supercell(pw: PWInput, q_cry, ucart):
         dks = np.linalg.norm(lat_to_reclat(pw.cell), axis=0) / nks
 
         nks_new = np.linalg.norm(lat_to_reclat(pw_super.cell), axis=0) / min(dks)
-        nks_new = [ceil(x) for x in nks_new]
+        nks_new = [ceil(x - 1E-4) for x in nks_new]
+        # minus 1E-3 to avoid floating point truncation error (of the input file)
+        # If original nk is 8, nks_new can become 8.00001 due to small digits in
+        # the input file. If we ceil this, it becomes 9. We want it to be 8, so
+        # we subtract a small value, 1E-4, from nks_new.
 
         input_kpt = ['K_POINTS automatic\n']
         input_kpt.append(f" {nks_new[0]:3d}{nks_new[1]:3d}{nks_new[2]:3d}  0 0 0")
